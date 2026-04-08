@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ImagePlus, X } from 'lucide-react';
+import { ImagePlus, X, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -44,6 +44,8 @@ const EditListing: React.FC = () => {
   const [newPreviews, setNewPreviews] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Заполняем форму при загрузке
@@ -101,6 +103,50 @@ const EditListing: React.FC = () => {
     URL.revokeObjectURL(newPreviews[index]);
     setNewFiles((p) => p.filter((_, i) => i !== index));
     setNewPreviews((p) => p.filter((_, i) => i !== index));
+  };
+
+  const handleDragStart = (index: number) => {
+    setDragIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  };
+
+  const handleDrop = async (dropIndex: number) => {
+    if (dragIndex === null || dragIndex === dropIndex) {
+      setDragIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    const reordered = [...existingPhotos];
+    const [moved] = reordered.splice(dragIndex, 1);
+    reordered.splice(dropIndex, 0, moved);
+
+    // Обновляем is_main: первое фото — главное
+    const updated = reordered.map((p, i) => ({ ...p, is_main: i === 0, order: i }));
+
+    setExistingPhotos(updated);
+    setDragIndex(null);
+    setDragOverIndex(null);
+
+    try {
+      await listingsApi.reorderPhotos(id!, updated.map((p) => ({
+        photo_id: p.id,
+        order: p.order,
+        is_main: p.is_main,
+      })));
+    } catch {
+      toast.error('Не удалось изменить порядок фото');
+      setExistingPhotos(existingPhotos);
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDragIndex(null);
+    setDragOverIndex(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -295,8 +341,25 @@ const EditListing: React.FC = () => {
             {totalPhotos > 0 && (
               <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                 {existingPhotos.map((photo, i) => (
-                  <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden group">
-                    <img src={photo.url} alt={`Фото ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                  <div
+                    key={photo.id}
+                    draggable
+                    onDragStart={() => handleDragStart(i)}
+                    onDragOver={(e) => handleDragOver(e, i)}
+                    onDrop={() => handleDrop(i)}
+                    onDragEnd={handleDragEnd}
+                    className={[
+                      'relative aspect-square rounded-xl overflow-hidden group cursor-grab active:cursor-grabbing transition-opacity',
+                      dragIndex === i ? 'opacity-40' : 'opacity-100',
+                      dragOverIndex === i && dragIndex !== i ? 'ring-2 ring-primary ring-offset-1' : '',
+                    ].join(' ')}
+                  >
+                    <img src={photo.url} alt={`Фото ${i + 1}`} className="w-full h-full object-cover pointer-events-none" loading="lazy" />
+                    {/* Ручка перетаскивания */}
+                    <div className="absolute top-1 left-1 w-5 h-5 bg-black/50 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <GripVertical className="w-3 h-3 text-white" />
+                    </div>
+                    {/* Удалить */}
                     <button
                       type="button"
                       onClick={() => handleDeleteExisting(photo)}
@@ -325,6 +388,10 @@ const EditListing: React.FC = () => {
                   </div>
                 ))}
               </div>
+            )}
+
+            {existingPhotos.length > 1 && (
+              <p className="text-xs text-muted-foreground">Перетащите фото для изменения порядка. Первое фото — главное.</p>
             )}
 
             {totalPhotos < 10 && (
