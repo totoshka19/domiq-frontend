@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { PageLayout } from '@/components/layout/PageLayout';
+import { Header } from '@/components/layout/Header';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { chatApi } from '@/api/chat';
 import { useWebSocket } from '@/hooks/useWebSocket';
@@ -26,7 +26,6 @@ const ChatRoom: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const historyLoaded = useRef(false);
 
-  // История сообщений — загружаем один раз, WS дополняет
   const { data, isLoading } = useQuery({
     queryKey: ['messages', id],
     queryFn: () => chatApi.getMessages(id!, { limit: 100 }),
@@ -35,7 +34,6 @@ const ChatRoom: React.FC = () => {
     refetchOnWindowFocus: false,
   });
 
-  // Устанавливаем историю только при первой загрузке
   useEffect(() => {
     if (data && !historyLoaded.current) {
       historyLoaded.current = true;
@@ -43,7 +41,6 @@ const ChatRoom: React.FC = () => {
     }
   }, [data]);
 
-  // Отмечаем прочитанными при открытии чата
   useEffect(() => {
     if (!id) return;
     chatApi.markAsRead(id).then(() => {
@@ -52,29 +49,25 @@ const ChatRoom: React.FC = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  // WebSocket
   const { sendMessage } = useWebSocket({
     conversationId: id ?? '',
     onMessage: (msg: WsIncomingMessage) => {
-      const newMessage: Message = {
+      setLocalMessages((prev) => [...prev, {
         id: msg.id,
         sender_id: msg.sender_id,
         text: msg.text,
         is_read: false,
         created_at: msg.created_at,
-      };
-      setLocalMessages((prev) => [...prev, newMessage]);
+      }]);
     },
     onOpen: () => setWsConnected(true),
     onClose: () => setWsConnected(false),
   });
 
-  // Скролл к последнему сообщению
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [localMessages]);
 
-  // Диалог для заголовка
   const { data: conversations = [] } = useQuery({
     queryKey: ['conversations'],
     queryFn: chatApi.getConversations,
@@ -92,10 +85,12 @@ const ChatRoom: React.FC = () => {
   };
 
   return (
-    <PageLayout>
-      <div className="flex flex-col h-[calc(100vh-130px)] min-h-[400px]">
+    <div className="h-screen flex flex-col overflow-hidden">
+      <Header />
+
+      <div className="flex-1 flex flex-col min-h-0 max-w-[1280px] w-full mx-auto px-4">
         {/* Шапка чата */}
-        <div className="flex items-center gap-3 pb-4 border-b flex-shrink-0 sticky top-0 bg-white z-10 pt-1">
+        <div className="flex items-center gap-3 py-3 border-b flex-shrink-0 bg-white">
           <button
             onClick={() => navigate('/profile/chats')}
             className="text-muted-foreground hover:text-foreground transition-colors"
@@ -132,41 +127,36 @@ const ChatRoom: React.FC = () => {
                   <ImageOff className="w-4 h-4 text-gray-300" />
                 </div>
               )}
+              <div className={cn('w-2 h-2 rounded-full flex-shrink-0', wsConnected ? 'bg-green-500' : 'bg-gray-300')} title={wsConnected ? 'Подключено' : 'Отключено'} />
             </>
           ) : (
             <span className="text-sm font-medium text-muted-foreground">Чат</span>
           )}
-
-          <div className={cn('w-2 h-2 rounded-full flex-shrink-0', wsConnected ? 'bg-green-500' : 'bg-gray-300')} title={wsConnected ? 'Подключено' : 'Отключено'} />
         </div>
 
-        {/* Сообщения */}
-        <div className="flex-1 overflow-y-auto py-4 flex flex-col gap-2">
+        {/* Сообщения — прижаты к низу */}
+        <div className="flex-1 overflow-y-auto py-4 flex flex-col justify-end gap-2 min-h-0">
           {isLoading ? (
-            <div className="flex flex-col gap-3 px-2">
-              {Array.from({ length: 5 }).map((_, i) => (
+            <div className="flex flex-col gap-3">
+              {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className={cn('flex', i % 2 === 0 ? 'justify-start' : 'justify-end')}>
                   <Skeleton className="h-10 w-48 rounded-2xl" />
                 </div>
               ))}
             </div>
           ) : localMessages.length === 0 ? (
-            <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
-              Напишите первое сообщение
-            </div>
+            <p className="text-center text-sm text-muted-foreground">Напишите первое сообщение</p>
           ) : (
             localMessages.map((msg) => {
               const isOwn = msg.sender_id === user?.id;
               return (
                 <div key={msg.id} className={cn('flex', isOwn ? 'justify-end' : 'justify-start')}>
-                  <div
-                    className={cn(
-                      'max-w-[70%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed',
-                      isOwn
-                        ? 'bg-primary text-primary-foreground rounded-br-sm'
-                        : 'bg-gray-100 text-gray-900 rounded-bl-sm',
-                    )}
-                  >
+                  <div className={cn(
+                    'max-w-[70%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed',
+                    isOwn
+                      ? 'bg-primary text-primary-foreground rounded-br-sm'
+                      : 'bg-gray-100 text-gray-900 rounded-bl-sm',
+                  )}>
                     <p className="break-words">{msg.text}</p>
                     <p className={cn('text-[10px] mt-1 text-right', isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground')}>
                       {formatDateTime(msg.created_at)}
@@ -180,7 +170,7 @@ const ChatRoom: React.FC = () => {
         </div>
 
         {/* Поле ввода */}
-        <form onSubmit={handleSend} className="flex gap-2 pt-4 border-t flex-shrink-0">
+        <form onSubmit={handleSend} className="flex gap-2 py-3 border-t flex-shrink-0">
           <Input
             ref={inputRef}
             value={text}
@@ -195,7 +185,7 @@ const ChatRoom: React.FC = () => {
           </Button>
         </form>
       </div>
-    </PageLayout>
+    </div>
   );
 };
 
