@@ -4,8 +4,8 @@ import type { PaginatedResponse } from '@/types/api';
 
 export const chatApi = {
   getConversations: async (): Promise<Conversation[]> => {
-    const { data } = await api.get<{ items: Conversation[] }>('/chat/conversations');
-    return data.items;
+    const { data } = await api.get<Conversation[]>('/chat/conversations');
+    return data;
   },
 
   getMessages: async (
