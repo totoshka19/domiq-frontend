@@ -24,26 +24,33 @@ const ChatRoom: React.FC = () => {
   const [wsConnected, setWsConnected] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const historyLoaded = useRef(false);
 
-  // История сообщений
+  // История сообщений — загружаем один раз, WS дополняет
   const { data, isLoading } = useQuery({
     queryKey: ['messages', id],
     queryFn: () => chatApi.getMessages(id!, { limit: 100 }),
     enabled: !!id,
-    staleTime: 0,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
   });
 
-  // Загружаем историю в локальный state + отмечаем прочитанными
+  // Устанавливаем историю только при первой загрузке
   useEffect(() => {
-    if (data) {
+    if (data && !historyLoaded.current) {
+      historyLoaded.current = true;
       setLocalMessages(data);
-      if (id) {
-        chatApi.markAsRead(id).then(() => {
-          queryClient.invalidateQueries({ queryKey: ['conversations'] });
-        }).catch(() => {});
-      }
     }
-  }, [data, id, queryClient]);
+  }, [data]);
+
+  // Отмечаем прочитанными при открытии чата
+  useEffect(() => {
+    if (!id) return;
+    chatApi.markAsRead(id).then(() => {
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   // WebSocket
   const { sendMessage } = useWebSocket({
