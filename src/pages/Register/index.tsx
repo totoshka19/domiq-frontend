@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,6 +33,7 @@ const Register: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<Role>('user');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -132,15 +134,25 @@ const Register: React.FC = () => {
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="password">Пароль</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Минимум 8 символов"
-              value={password}
-              onChange={(e) => { setPassword(e.target.value); clearError('password'); }}
-              autoComplete="new-password"
-              className={errors.password ? 'border-destructive' : ''}
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Минимум 8 символов"
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); clearError('password'); }}
+                autoComplete="new-password"
+                className={errors.password ? 'border-destructive pr-10' : 'pr-10'}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
             {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
           </div>
 
