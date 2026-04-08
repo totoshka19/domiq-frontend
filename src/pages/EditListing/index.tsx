@@ -346,7 +346,7 @@ const EditListing: React.FC = () => {
                     draggable
                     onDragStart={() => handleDragStart(i)}
                     onDragOver={(e) => handleDragOver(e, i)}
-                    onDrop={() => handleDrop(i)}
+                    onDrop={(e) => { e.preventDefault(); handleDrop(i); }}
                     onDragEnd={handleDragEnd}
                     className={[
                       'relative aspect-square rounded-xl overflow-hidden group cursor-grab active:cursor-grabbing transition-opacity',
@@ -354,7 +354,7 @@ const EditListing: React.FC = () => {
                       dragOverIndex === i && dragIndex !== i ? 'ring-2 ring-primary ring-offset-1' : '',
                     ].join(' ')}
                   >
-                    <img src={photo.url} alt={`Фото ${i + 1}`} className="w-full h-full object-cover pointer-events-none" loading="lazy" />
+                    <img src={photo.url} alt={`Фото ${i + 1}`} draggable={false} className="w-full h-full object-cover pointer-events-none" loading="lazy" />
                     {/* Ручка перетаскивания */}
                     <div className="absolute top-1 left-1 w-5 h-5 bg-black/50 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                       <GripVertical className="w-3 h-3 text-white" />
