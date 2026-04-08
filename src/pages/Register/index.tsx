@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { PasswordInput } from '@/components/ui/PasswordInput';
+import { AuthLayout } from '@/components/layout/AuthLayout';
 import { useAppDispatch } from '@/store';
 import { setCredentials } from '@/store/authSlice';
 import { authApi } from '@/api/auth';
@@ -22,7 +23,6 @@ interface FormErrors {
   full_name?: string;
   email?: string;
   password?: string;
-  role?: string;
 }
 
 const Register: React.FC = () => {
@@ -33,7 +33,6 @@ const Register: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<Role>('user');
-  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -87,99 +86,80 @@ const Register: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
-      <div className="w-full max-w-sm">
-        {/* Логотип */}
-        <div className="text-center mb-8">
-          <Link to="/" className="text-2xl font-bold text-primary">
-            Domiq
+    <AuthLayout
+      title="Создать аккаунт"
+      subtitle={
+        <>
+          Уже есть аккаунт?{' '}
+          <Link to="/login" className="text-primary hover:underline font-medium">
+            Войти
           </Link>
-          <h1 className="mt-4 text-xl font-semibold text-gray-900">Создать аккаунт</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Уже есть аккаунт?{' '}
-            <Link to="/login" className="text-primary hover:underline font-medium">
-              Войти
-            </Link>
-          </p>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 bg-white border rounded-2xl p-6 shadow-sm">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="full_name">Имя и фамилия</Label>
+          <Input
+            id="full_name"
+            placeholder="Введите ваше имя и фамилию"
+            value={fullName}
+            onChange={(e) => { setFullName(e.target.value); clearError('full_name'); }}
+            autoComplete="name"
+            className={errors.full_name ? 'border-destructive' : ''}
+          />
+          {errors.full_name && <p className="text-xs text-destructive">{errors.full_name}</p>}
         </div>
 
-        {/* Форма */}
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 bg-white border rounded-2xl p-6 shadow-sm">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="full_name">Имя и фамилия</Label>
-            <Input
-              id="full_name"
-              placeholder="Введите ваше имя и фамилию"
-              value={fullName}
-              onChange={(e) => { setFullName(e.target.value); clearError('full_name'); }}
-              autoComplete="name"
-              className={errors.full_name ? 'border-destructive' : ''}
-            />
-            {errors.full_name && <p className="text-xs text-destructive">{errors.full_name}</p>}
-          </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="Введите вашу почту"
+            value={email}
+            onChange={(e) => { setEmail(e.target.value); clearError('email'); }}
+            autoComplete="email"
+            className={errors.email ? 'border-destructive' : ''}
+          />
+          {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
+        </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="Введите вашу почту"
-              value={email}
-              onChange={(e) => { setEmail(e.target.value); clearError('email'); }}
-              autoComplete="email"
-              className={errors.email ? 'border-destructive' : ''}
-            />
-            {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
-          </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="password">Пароль</Label>
+          <PasswordInput
+            id="password"
+            value={password}
+            onChange={(e) => { setPassword(e.target.value); clearError('password'); }}
+            autoComplete="new-password"
+            hasError={!!errors.password}
+          />
+          {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
+        </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="password">Пароль</Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Минимум 8 символов"
-                value={password}
-                onChange={(e) => { setPassword(e.target.value); clearError('password'); }}
-                autoComplete="new-password"
-                className={errors.password ? 'border-destructive pr-10' : 'pr-10'}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-            {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
-          </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="role">Я регистрируюсь как</Label>
+          <Select value={role} onValueChange={(v) => setRole(v as Role)}>
+            <SelectTrigger id="role">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="user">Покупатель / Арендатор</SelectItem>
+              <SelectItem value="agent">Агент / Застройщик</SelectItem>
+            </SelectContent>
+          </Select>
+          {role === 'agent' && (
+            <p className="text-xs text-muted-foreground">
+              Агенты могут размещать объявления о продаже и аренде
+            </p>
+          )}
+        </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="role">Я регистрируюсь как</Label>
-            <Select value={role} onValueChange={(v) => setRole(v as Role)}>
-              <SelectTrigger id="role">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="user">Покупатель / Арендатор</SelectItem>
-                <SelectItem value="agent">Агент / Застройщик</SelectItem>
-              </SelectContent>
-            </Select>
-            {role === 'agent' && (
-              <p className="text-xs text-muted-foreground">
-                Агенты могут размещать объявления о продаже и аренде
-              </p>
-            )}
-          </div>
-
-          <Button type="submit" className="w-full mt-2" disabled={isLoading}>
-            {isLoading ? 'Создаём аккаунт...' : 'Зарегистрироваться'}
-          </Button>
-        </form>
-      </div>
-    </div>
+        <Button type="submit" className="w-full mt-2" disabled={isLoading}>
+          {isLoading ? 'Создаём аккаунт...' : 'Зарегистрироваться'}
+        </Button>
+      </form>
+    </AuthLayout>
   );
 };
 

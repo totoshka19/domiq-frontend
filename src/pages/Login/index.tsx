@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PasswordInput } from '@/components/ui/PasswordInput';
+import { AuthLayout } from '@/components/layout/AuthLayout';
 import { useAppDispatch } from '@/store';
 import { setCredentials } from '@/store/authSlice';
 import { authApi } from '@/api/auth';
@@ -17,7 +18,6 @@ const Login: React.FC = () => {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
@@ -60,68 +60,49 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm">
-        {/* Логотип */}
-        <div className="text-center mb-8">
-          <Link to="/" className="text-2xl font-bold text-primary">
-            Domiq
+    <AuthLayout
+      title="Вход в аккаунт"
+      subtitle={
+        <>
+          Нет аккаунта?{' '}
+          <Link to="/register" className="text-primary hover:underline font-medium">
+            Зарегистрироваться
           </Link>
-          <h1 className="mt-4 text-xl font-semibold text-gray-900">Вход в аккаунт</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Нет аккаунта?{' '}
-            <Link to="/register" className="text-primary hover:underline font-medium">
-              Зарегистрироваться
-            </Link>
-          </p>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 bg-white border rounded-2xl p-6 shadow-sm">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="Введите вашу почту"
+            value={email}
+            onChange={(e) => { setEmail(e.target.value); setErrors((v) => ({ ...v, email: undefined })); }}
+            autoComplete="email"
+            className={errors.email ? 'border-destructive' : ''}
+          />
+          {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
         </div>
 
-        {/* Форма */}
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 bg-white border rounded-2xl p-6 shadow-sm">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="anna@mail.ru"
-              value={email}
-              onChange={(e) => { setEmail(e.target.value); setErrors((v) => ({ ...v, email: undefined })); }}
-              autoComplete="email"
-              className={errors.email ? 'border-destructive' : ''}
-            />
-            {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
-          </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="password">Пароль</Label>
+          <PasswordInput
+            id="password"
+            value={password}
+            onChange={(e) => { setPassword(e.target.value); setErrors((v) => ({ ...v, password: undefined })); }}
+            autoComplete="current-password"
+            hasError={!!errors.password}
+          />
+          {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
+        </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="password">Пароль</Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => { setPassword(e.target.value); setErrors((v) => ({ ...v, password: undefined })); }}
-                autoComplete="current-password"
-                className={errors.password ? 'border-destructive pr-10' : 'pr-10'}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-            {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
-          </div>
-
-          <Button type="submit" className="w-full mt-2" disabled={isLoading}>
-            {isLoading ? 'Входим...' : 'Войти'}
-          </Button>
-        </form>
-      </div>
-    </div>
+        <Button type="submit" className="w-full mt-2" disabled={isLoading}>
+          {isLoading ? 'Входим...' : 'Войти'}
+        </Button>
+      </form>
+    </AuthLayout>
   );
 };
 
