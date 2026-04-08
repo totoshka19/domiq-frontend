@@ -44,11 +44,12 @@ export const useSimilarListings = (id: string, limit = 4) => {
   });
 };
 
-export const useListingsMap = (params?: ListingsParams) => {
+export const useListingsMap = (params?: ListingsParams, enabled = true) => {
   return useQuery({
     queryKey: ['listings', 'map', params],
     queryFn: () => listingsApi.getMap(params),
     staleTime: 1000 * 60 * 5,
+    enabled,
   });
 };
 
