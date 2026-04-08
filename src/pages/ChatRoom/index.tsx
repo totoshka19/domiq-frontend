@@ -95,7 +95,7 @@ const ChatRoom: React.FC = () => {
     <PageLayout>
       <div className="flex flex-col h-[calc(100vh-130px)] min-h-[400px]">
         {/* Шапка чата */}
-        <div className="flex items-center gap-3 pb-4 border-b flex-shrink-0">
+        <div className="flex items-center gap-3 pb-4 border-b flex-shrink-0 sticky top-0 bg-white z-10 pt-1">
           <button
             onClick={() => navigate('/profile/chats')}
             className="text-muted-foreground hover:text-foreground transition-colors"
