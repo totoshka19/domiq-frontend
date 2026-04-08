@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PageLayout } from '@/components/layout/PageLayout';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { chatApi } from '@/api/chat';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useAuth } from '@/hooks/useAuth';
@@ -18,6 +18,7 @@ const ChatRoom: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [text, setText] = useState('');
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
   const [wsConnected, setWsConnected] = useState(false);
@@ -32,12 +33,17 @@ const ChatRoom: React.FC = () => {
     staleTime: 0,
   });
 
-  // Загружаем историю в локальный state
+  // Загружаем историю в локальный state + отмечаем прочитанными
   useEffect(() => {
     if (data) {
-      setLocalMessages(data); // API отдаёт в хронологическом порядке
+      setLocalMessages(data);
+      if (id) {
+        chatApi.markAsRead(id).then(() => {
+          queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        }).catch(() => {});
+      }
     }
-  }, [data]);
+  }, [data, id, queryClient]);
 
   // WebSocket
   const { sendMessage } = useWebSocket({

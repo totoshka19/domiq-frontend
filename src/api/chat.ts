@@ -18,6 +18,10 @@ export const chatApi = {
     return data;
   },
 
+  markAsRead: async (conversationId: string): Promise<void> => {
+    await api.post(`/chat/conversations/${conversationId}/read`);
+  },
+
   createConversation: async (listingId: string): Promise<Conversation> => {
     const { data } = await api.post<Conversation>('/chat/conversations', {
       listing_id: listingId,
