@@ -22,7 +22,7 @@ export interface ListingOwner {
 export interface ListingBrief {
   id: string;
   title: string;
-  price: number;
+  price: number | string;
   currency: string;
   deal_type: DealType;
   property_type: PropertyType;
