@@ -1,5 +1,6 @@
 export function formatPrice(price: number | string, currency = 'RUB'): string {
   const num = Math.round(Number(price));
+  if (isNaN(num)) return currency === 'RUB' ? '— ₽' : `— ${currency}`;
   const formatted = num.toLocaleString('ru-RU');
   return currency === 'RUB' ? `${formatted} ₽` : `${formatted} ${currency}`;
 }

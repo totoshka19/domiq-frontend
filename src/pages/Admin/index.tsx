@@ -167,7 +167,7 @@ const ModerationTab: React.FC = () => {
           {listings.map((listing) => (
             <div key={listing.id} className="bg-white border rounded-2xl p-4 flex gap-4 items-start">
               <div className="w-16 h-16 flex-shrink-0 rounded-xl overflow-hidden bg-gray-100">
-                {listing.photos[0] ? (
+                {listing.photos?.[0] ? (
                   <img src={listing.photos[0].url} alt={listing.title} width={64} height={64} className="w-full h-full object-cover" loading="lazy" />
                 ) : <div className="w-full h-full" />}
               </div>
@@ -176,7 +176,7 @@ const ModerationTab: React.FC = () => {
                   {listing.title}
                 </Link>
                 <p className="text-sm font-semibold text-primary mt-0.5">{formatPrice(listing.price, listing.currency)}</p>
-                <p className="text-xs text-muted-foreground">{listing.city}, {listing.address} · {listing.owner.full_name}</p>
+                <p className="text-xs text-muted-foreground">{listing.city}, {listing.address} · {listing.owner?.full_name}</p>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Button size="sm" variant="outline" className="text-green-600 border-green-200 hover:bg-green-50" onClick={() => approveMutation.mutate(listing.id)} disabled={approveMutation.isPending}>
