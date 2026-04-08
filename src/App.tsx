@@ -1,13 +1,37 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { RouterProvider } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from '@/components/ui/sonner';
+import { store } from '@/store';
+import { initAuth } from '@/store/authSlice';
+import { router } from './router';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,
+      retry: 1,
+    },
+  },
+});
+
+const AppInit: React.FC = () => {
+  useEffect(() => {
+    store.dispatch(initAuth());
+  }, []);
+
+  return <RouterProvider router={router} />;
+};
 
 const App: React.FC = () => {
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-primary mb-2">Domiq</h1>
-        <p className="text-muted-foreground">Маркетплейс недвижимости</p>
-      </div>
-    </div>
+    <Provider store={store}>
+      <QueryClientProvider client={queryClient}>
+        <AppInit />
+        <Toaster richColors position="top-right" />
+      </QueryClientProvider>
+    </Provider>
   );
 };
 
