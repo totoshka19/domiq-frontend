@@ -34,8 +34,8 @@ const ChatRoom: React.FC = () => {
 
   // Загружаем историю в локальный state
   useEffect(() => {
-    if (data?.items) {
-      setLocalMessages([...data.items].reverse()); // API отдаёт новые первыми
+    if (data) {
+      setLocalMessages(data); // API отдаёт в хронологическом порядке
     }
   }, [data]);
 

@@ -1,6 +1,5 @@
 import api from './axios';
 import type { Conversation, Message } from '@/types/chat';
-import type { PaginatedResponse } from '@/types/api';
 
 export const chatApi = {
   getConversations: async (): Promise<Conversation[]> => {
@@ -11,8 +10,8 @@ export const chatApi = {
   getMessages: async (
     conversationId: string,
     params?: { page?: number; limit?: number },
-  ): Promise<PaginatedResponse<Message>> => {
-    const { data } = await api.get<PaginatedResponse<Message>>(
+  ): Promise<Message[]> => {
+    const { data } = await api.get<Message[]>(
       `/chat/conversations/${conversationId}/messages`,
       { params },
     );
