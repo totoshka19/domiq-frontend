@@ -224,7 +224,6 @@ const ListingDetail: React.FC = () => {
               <FavoriteButton
                 listingId={listing.id}
                 isFavorite={listing.is_favorite}
-                size="default"
               />
             </div>
 
