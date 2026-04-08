@@ -45,7 +45,7 @@ export const listingsApi = {
     return data;
   },
 
-  update: async (id: string, payload: Partial<ListingCreate>): Promise<Listing> => {
+  update: async (id: string, payload: Partial<ListingCreate> & { status?: import('@/types/listing').ListingStatus }): Promise<Listing> => {
     const { data } = await api.patch<Listing>(`/listings/${id}`, payload);
     return data;
   },
