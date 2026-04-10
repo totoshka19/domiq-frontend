@@ -1,4 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAppSelector } from '@/store';
+import { selectIsAuthenticated } from '@/store/authSlice';
 import { listingsApi } from '@/api/listings';
 import type { ListingsParams } from '@/types/listing';
 
@@ -33,6 +35,17 @@ export const useFavorites = (params?: { page?: number; limit?: number }) => {
     queryFn: () => listingsApi.getFavorites(params),
     staleTime: 1000 * 60 * 2,
   });
+};
+
+export const useFavoriteIds = () => {
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const { data } = useQuery({
+    queryKey: ['listings', 'favorites', 'ids'],
+    queryFn: () => listingsApi.getFavorites({ limit: 1000 }),
+    staleTime: 1000 * 60 * 2,
+    enabled: isAuthenticated,
+  });
+  return new Set(data?.items.map((l) => l.id) ?? []);
 };
 
 export const useSimilarListings = (id: string, limit = 4) => {
@@ -71,6 +84,7 @@ export const useToggleFavorite = (listingId: string) => {
       queryClient.invalidateQueries({ queryKey: ['listings', 'favorites'] });
     },
   });
+
 
   return { add, remove };
 };

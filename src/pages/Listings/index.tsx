@@ -17,7 +17,7 @@ import { FilterPanel } from '@/components/listing/FilterPanel';
 import { ListingCard } from '@/components/listing/ListingCard';
 import { ListingGridSkeleton } from '@/components/listing/ListingCardSkeleton';
 import { ListingsMap } from '@/components/listing/ListingsMap';
-import { useListings, useListingsMap } from '@/hooks/useListings';
+import { useListings, useListingsMap, useFavoriteIds } from '@/hooks/useListings';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { selectFilters, setFilter, setPage, resetFilters } from '@/store/filtersSlice';
 import type { DealType, PropertyType, ListingsParams } from '@/types/listing';
@@ -92,6 +92,7 @@ const Listings: React.FC = () => {
 
   const { data, isLoading, isError } = useListings(params);
   const { data: mapData, isLoading: isMapLoading } = useListingsMap(mapParams, viewMode === 'map');
+  const favoriteIds = useFavoriteIds();
 
   const listings = data?.items ?? [];
   const total = data?.total ?? 0;
@@ -187,7 +188,7 @@ const Listings: React.FC = () => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {listings.map((listing) => (
-                    <ListingCard key={listing.id} listing={listing} />
+                    <ListingCard key={listing.id} listing={listing} isFavorite={favoriteIds.has(listing.id)} />
                   ))}
                 </div>
               )}
