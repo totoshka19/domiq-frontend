@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ImagePlus, X, GripVertical } from 'lucide-react';
@@ -18,6 +18,7 @@ import { PageLayout } from '@/components/layout/PageLayout';
 import { useListing } from '@/hooks/useListings';
 import { listingsApi } from '@/api/listings';
 import { filesApi } from '@/api/files';
+import { useGeocoding } from '@/hooks/useGeocoding';
 import type { DealType, PropertyType, Photo } from '@/types/listing';
 
 const EditListing: React.FC = () => {
@@ -39,6 +40,10 @@ const EditListing: React.FC = () => {
   const [city, setCity] = useState('');
   const [district, setDistrict] = useState('');
   const [address, setAddress] = useState('');
+  const [latitude, setLatitude] = useState(0);
+  const [longitude, setLongitude] = useState(0);
+  // Флаг: пользователь вручную изменил адрес — нужен новый геокодинг
+  const locationChangedRef = useRef(false);
   const [existingPhotos, setExistingPhotos] = useState<Photo[]>([]);
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [newPreviews, setNewPreviews] = useState<string[]>([]);
@@ -64,8 +69,26 @@ const EditListing: React.FC = () => {
     setCity(listing.city);
     setDistrict(listing.district);
     setAddress(listing.address);
+    setLatitude(listing.latitude);
+    setLongitude(listing.longitude);
+    locationChangedRef.current = false;
     setExistingPhotos([...listing.photos].sort((a, b) => a.order - b.order));
   }, [listing]);
+
+  // Геокодинг: срабатывает только если пользователь изменил адрес вручную
+  const geocodeQuery = useMemo(
+    () => (locationChangedRef.current ? [city, address].filter(Boolean).join(', ') : ''),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [city, address],
+  );
+  const { result: geoResult, isLoading: isGeocoding } = useGeocoding(geocodeQuery);
+
+  useEffect(() => {
+    if (geoResult) {
+      setLatitude(geoResult.latitude);
+      setLongitude(geoResult.longitude);
+    }
+  }, [geoResult]);
 
   const clearError = (key: string) => setErrors((v) => ({ ...v, [key]: undefined as unknown as string }));
 
@@ -168,6 +191,8 @@ const EditListing: React.FC = () => {
         city: city.trim(),
         district: district.trim(),
         address: address.trim(),
+        latitude,
+        longitude,
       });
 
       if (newFiles.length > 0) {
@@ -303,7 +328,7 @@ const EditListing: React.FC = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="city">Город *</Label>
-                <Input id="city" value={city} onChange={(e) => { setCity(e.target.value); clearError('city'); }} className={errors.city ? 'border-destructive' : ''} />
+                <Input id="city" value={city} onChange={(e) => { locationChangedRef.current = true; setCity(e.target.value); clearError('city'); }} className={errors.city ? 'border-destructive' : ''} />
                 {errors.city && <p className="text-xs text-destructive">{errors.city}</p>}
               </div>
               <div className="flex flex-col gap-1.5">
@@ -314,8 +339,14 @@ const EditListing: React.FC = () => {
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="address">Адрес *</Label>
-              <Input id="address" value={address} onChange={(e) => { setAddress(e.target.value); clearError('address'); }} className={errors.address ? 'border-destructive' : ''} />
+              <Input id="address" value={address} onChange={(e) => { locationChangedRef.current = true; setAddress(e.target.value); clearError('address'); }} className={errors.address ? 'border-destructive' : ''} />
               {errors.address && <p className="text-xs text-destructive">{errors.address}</p>}
+              {isGeocoding && (
+                <p className="text-xs text-muted-foreground">Определяем координаты...</p>
+              )}
+              {!isGeocoding && geoResult && (
+                <p className="text-xs text-green-600">✓ Координаты обновлены</p>
+              )}
             </div>
           </section>
 

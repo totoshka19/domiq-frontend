@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ImagePlus, X } from 'lucide-react';
@@ -16,6 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { listingsApi } from '@/api/listings';
 import { filesApi } from '@/api/files';
+import { useGeocoding } from '@/hooks/useGeocoding';
 import type { DealType, PropertyType } from '@/types/listing';
 
 interface FormState {
@@ -66,6 +67,24 @@ const CreateListing: React.FC = () => {
   const [previews, setPreviews] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Геокодинг: строим запрос из города + адреса, получаем lat/lon автоматически
+  const geocodeQuery = useMemo(
+    () => [form.city, form.address].filter(Boolean).join(', '),
+    [form.city, form.address],
+  );
+  const { result: geoResult, isLoading: isGeocoding } = useGeocoding(geocodeQuery);
+
+  // При успешном геокодинге — обновляем координаты в форме
+  useEffect(() => {
+    if (geoResult) {
+      setForm((v) => ({
+        ...v,
+        latitude: String(geoResult.latitude),
+        longitude: String(geoResult.longitude),
+      }));
+    }
+  }, [geoResult]);
 
   const set = (key: keyof FormState, value: string) => {
     setForm((v) => ({ ...v, [key]: value }));
@@ -320,6 +339,13 @@ const CreateListing: React.FC = () => {
                 className={errors.address ? 'border-destructive' : ''}
               />
               {errors.address && <p className="text-xs text-destructive">{errors.address}</p>}
+              {/* Статус геокодинга */}
+              {isGeocoding && (
+                <p className="text-xs text-muted-foreground">Определяем координаты...</p>
+              )}
+              {!isGeocoding && geoResult && (
+                <p className="text-xs text-green-600">✓ Координаты определены</p>
+              )}
             </div>
           </section>
 
