@@ -4,6 +4,8 @@
 
 [![Открыть сайт](https://img.shields.io/badge/Открыть%20сайт-domiq--frontend.vercel.app-blue?style=for-the-badge&logo=vercel)](https://domiq-frontend.vercel.app)
 
+![Domiq Preview](./docs/preview.png)
+
 ---
 
 ## Стек технологий
