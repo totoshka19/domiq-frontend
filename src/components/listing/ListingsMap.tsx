@@ -1,7 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as maptilersdk from '@maptiler/sdk';
 import '@maptiler/sdk/dist/maptiler-sdk.css';
 import { useNavigate } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ListingMapPoint } from '@/types/listing';
 import { formatPrice } from '@/utils/formatPrice';
@@ -31,6 +32,7 @@ export const ListingsMap: React.FC<ListingsMapProps> = ({ points, className }) =
   const mapRef = useRef<maptilersdk.Map | null>(null);
   const markersRef = useRef<maptilersdk.Marker[]>([]);
   const navigate = useNavigate();
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
 
   // Инициализация карты
   useEffect(() => {
@@ -45,12 +47,14 @@ export const ListingsMap: React.FC<ListingsMapProps> = ({ points, className }) =
     });
 
     mapRef.current = map;
+    map.once('load', () => setIsMapLoaded(true));
 
     return () => {
       markersRef.current.forEach((m) => m.remove());
       markersRef.current = [];
       map.remove();
       mapRef.current = null;
+      setIsMapLoaded(false);
     };
   }, []);
 
@@ -99,9 +103,13 @@ export const ListingsMap: React.FC<ListingsMapProps> = ({ points, className }) =
   }, [points, navigate]);
 
   return (
-    <div
-      ref={containerRef}
-      className={cn('w-full h-full rounded-xl overflow-hidden', className)}
-    />
+    <div className={cn('relative w-full h-full', className)}>
+      <div ref={containerRef} className="w-full h-full rounded-xl overflow-hidden" />
+      {!isMapLoaded && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-xl">
+          <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+        </div>
+      )}
+    </div>
   );
 };
