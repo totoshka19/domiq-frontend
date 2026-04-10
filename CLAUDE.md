@@ -17,7 +17,7 @@ React 19 + TypeScript + Vite. Деплой на Vercel.
 - **shadcn/ui** — готовые UI-компоненты (Button, Dialog, Select, Tabs и др.)
 - **Tailwind CSS v4** — кастомные стили поверх shadcn/ui
 - SCSS — только для сложных анимаций и псевдоэлементов
-- Яндекс.Карты API или 2GIS — карты
+- **MapTiler SDK** — карты (пакет `@maptiler/sdk`)
 
 ### Важно: shadcn/ui + Tailwind — вместе, не вместо
 shadcn/ui — не альтернатива Tailwind, а надстройка над ним:
@@ -80,14 +80,14 @@ npx shadcn@latest add dropdown-menu
 ```env
 VITE_API_URL=http://localhost:8000/api
 VITE_WS_URL=ws://localhost:8000/api
-VITE_YANDEX_MAPS_KEY=your-key-here
+VITE_MAPTILER_KEY=your-key-here
 ```
 
 ### .env.production (Vercel)
 ```env
 VITE_API_URL=https://domiq-backend.onrender.com/api
 VITE_WS_URL=wss://domiq-backend.onrender.com/api
-VITE_YANDEX_MAPS_KEY=your-key-here
+VITE_MAPTILER_KEY=your-key-here
 ```
 
 > Все переменные фронтенда начинаются с `VITE_` — иначе Vite их не передаст в браузер.
@@ -101,43 +101,55 @@ domiq-frontend/
 ├── src/
 │   ├── api/
 │   │   ├── axios.ts          # настроенный instance с токеном и refresh
-│   │   ├── auth.ts           # запросы к /auth/*
-│   │   ├── listings.ts       # запросы к /listings/*
-│   │   ├── search.ts         # запросы к /search/*
+│   │   ├── auth.ts           # запросы к /auth/* и /users/*
+│   │   ├── listings.ts       # запросы к /listings/* (CRUD, избранное, карта)
+│   │   ├── search.ts         # запросы к /search/* (поиск, автодополнение)
 │   │   ├── chat.ts           # запросы к /chat/*
-│   │   └── files.ts          # загрузка фото
+│   │   ├── files.ts          # загрузка фото, смена порядка, удаление
+│   │   └── admin.ts          # запросы к /admin/* (статистика, пользователи, модерация)
 │   ├── components/
-│   │   ├── ui/               # базовые: Button, Input, Modal, Card...
-│   │   ├── layout/           # Header, Footer, Sidebar
-│   │   └── listing/          # ListingCard, ListingGallery, ListingMap...
+│   │   ├── ui/               # shadcn/ui компоненты (не редактировать напрямую)
+│   │   ├── layout/           # Header, Footer, PageLayout, AuthLayout, ProfileLayout
+│   │   └── listing/          # ListingCard, ListingGallery, ListingsMap, FilterPanel...
 │   ├── pages/
-│   │   ├── Home/
-│   │   ├── Listings/         # поисковая выдача
+│   │   ├── Home/             # лендинг, карусель свежих объявлений
+│   │   ├── Listings/         # поисковая выдача с фильтрами и картой
 │   │   ├── ListingDetail/    # карточка объявления
-│   │   ├── Profile/          # личный кабинет
-│   │   ├── Chat/
-│   │   ├── Admin/
+│   │   ├── CreateListing/    # форма создания (только agent/admin)
+│   │   ├── EditListing/      # форма редактирования (только agent/admin)
+│   │   ├── Profile/          # личный кабинет (имя, телефон, аватар)
+│   │   ├── MyListings/       # мои объявления агента
+│   │   ├── Favorites/        # избранные объявления
+│   │   ├── Chats/            # список диалогов
+│   │   ├── ChatRoom/         # чат в реальном времени (WebSocket)
+│   │   ├── Admin/            # панель администратора
 │   │   ├── Login/
-│   │   └── Register/
+│   │   ├── Register/
+│   │   └── NotFound/         # 404
 │   ├── store/
 │   │   ├── index.ts          # configureStore
-│   │   ├── authSlice.ts      # токены, текущий пользователь
+│   │   ├── authSlice.ts      # токены, текущий пользователь, initAuth thunk
 │   │   └── filtersSlice.ts   # фильтры поиска
 │   ├── hooks/
 │   │   ├── useAuth.ts        # текущий пользователь из store
-│   │   ├── useListings.ts    # TanStack Query для списка
+│   │   ├── useListings.ts    # TanStack Query хуки для объявлений
+│   │   ├── useSearch.ts      # TanStack Query хуки для поиска
 │   │   └── useWebSocket.ts   # подключение к чату
 │   ├── types/
-│   │   ├── listing.ts        # интерфейсы Listing, Photo, ...
-│   │   ├── user.ts           # User, Role, ...
+│   │   ├── listing.ts        # Listing, ListingBrief, Photo, DealType, ...
+│   │   ├── user.ts           # User, UserRole, AuthTokens, ...
+│   │   ├── chat.ts           # Conversation, Message, WsIncomingMessage, ...
+│   │   ├── admin.ts          # AdminStats, AdminUser, ...
 │   │   └── api.ts            # PaginatedResponse, ApiError, ...
+│   ├── lib/
+│   │   └── utils.ts          # cn() — classnames helper (shadcn/ui)
 │   ├── utils/
 │   │   ├── formatPrice.ts    # форматирование цены "7 500 000 ₽"
-│   │   ├── formatDate.ts
-│   │   └── cn.ts             # classnames helper
+│   │   ├── formatDate.ts     # относительные и абсолютные даты на русском
+│   │   └── errorMessages.ts  # коды HTTP-ошибок → понятный текст
 │   ├── App.tsx
 │   ├── main.tsx
-│   └── router.tsx            # все маршруты
+│   └── router.tsx            # все маршруты (ProtectedRoute, RoleRoute)
 ├── public/
 ├── .env.local
 ├── .env.example
@@ -146,6 +158,7 @@ domiq-frontend/
 ├── tailwind.config.ts
 ├── tsconfig.json
 ├── vite.config.ts
+├── vercel.json               # конфиг деплоя (SPA redirect)
 ├── CLAUDE.md                 # этот файл
 └── package.json
 ```
@@ -427,3 +440,4 @@ chore(deps): обновить TanStack Query до v5
 - React Router v7: https://reactrouter.com
 - Axios: https://axios-http.com
 - Vite: https://vitejs.dev
+- MapTiler SDK: https://docs.maptiler.com/sdk-js/
